@@ -1,0 +1,5 @@
+.venv/
+aclImdb/
+aclImdb_v1.tar.gz
+__pycache__/
+.ipynb_checkpoints/

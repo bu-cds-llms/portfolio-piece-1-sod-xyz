@@ -1,82 +1,269 @@
-[![Review Assignment Due Date](https://classroom.github.com/assets/deadline-readme-button-22041afd0340ce965d47ae6ef1cefeee28c7c493a6346c4f15d667ab976d596c.svg)](https://classroom.github.com/a/brKTKdOU)
-# Portfolio Piece Assignment
+# Evaluating Sentiment Model Robustness Across Genre Subdomains
 
-This repository is a template for your portfolio piece. You'll build on your weekly labs to create a polished, well-documented project that demonstrates your understanding of the concepts we've covered.
+## Overview
 
-## What You're Building
+Machine learning models often perform well on the data they were trained on, yet struggle when applied to slightly different data. This phenomenon, known as domain shift, occurs when a machine learning model's training data (source domain) differs statistically from the data it encounters during deployment (target domain), leading to performance degradation and is common in real-world applications. A sentiment model trained on product reviews, for example, may not perform equally well on social media posts or news articles.
 
-Your portfolio piece could be a Jupyter notebook (or set of notebooks), or another reporting format (PDF with embedded images, etc.) that:
-- Demonstrates understanding of course concepts
-- Includes working, well-documented code (in notebooks or imported scripts)
-- Analyzes results critically
-- Tells a clear story from problem/question to approach to results and insights
 
-If you'd like, this can become part of your professional portfolio, so treat it as work you'd be proud to show a potential employer or collaborator.
 
-## Grading
+This project examines that problem in a controlled setting. Using the IMDB movie review dataset that was completed during our DS593 Lab 1 assignment, I investigate whether a sentiment classifier trained on general movie reviews performs equally well on specific genre-based subsets such as horror, comedy, romance, and action.
 
-Your work will be evaluated on:
-- **Conceptual Understanding** (5 pts): Do you explain *why* you chose specific methods? Do you connect to course material?
-- **Technical Implementation** (5 pts): Does your code run without errors? Do all components work correctly?
-- **Code Quality & Documentation** (5 pts): Is your notebook/code clear and well-organized? Does it tell a story?
-- **Critical Analysis** (5 pts): Do you interpret results thoughtfully? Discuss limitations and tradeoffs?
-- **Peer Reviews** (5 pts): Did you provide constructive feedback on two classmates' projects?
 
-See the full [rubric](https://lauren897.github.io/cds593-private/rubrics.html#portfolio-piece-rubric) for details.
 
-## Suggested Repository Structure
+Because the IMDB dataset does not include explicit genre labels, I construct genre-like subsets using keyword-based weak supervision. The goal is not only to measure accuracy, but to understand how changes in language distribution affect model performance.
 
-You're free to organize this however makes sense for your project, but here's a structure that works well:
 
-```
-your-portfolio-piece/
-├── README.md (this file - update it with your project details)
-├── requirements.txt or equivalent
+## Central Research Question:
+
+Does a sentiment model trained on general movie reviews maintain its performance when applied to genre-specific subsets, or does domain shift reduce classification accuracy?
+
+
+
+\## Dataset:
+
+This project uses the IMDB Movie Review Dataset from Stanford which can be found \[!\[here](https://ai.stanford.edu/~amaas/data/sentiment/)
+
+
+
+Full Dataset:
+
+* 50,000 total labeled reviews
+* 25,000 labeled training reviews
+* 25,000 labeled test reviews
+* Evenly split between positive and negative sentiment
+
+
+
+Dataset Preparation for This Project: 
+
+To allow efficient experimentation while maintaining statistical balance, I use a subset of:
+
+* 5,000 total movie reviews
+* 2,500 positive reviews
+* 2,500 negative reviews
+
+
+
+The data is randomly shuffled and split into:
+
+* 80% Training set
+* 20% Test set
+
+
+
+Download and Extraction
+
+The notebook automatically:
+
+* Downloads the dataset from Stanford’s website (if not already present);
+* Extracts it to the locally; and 
+* Loads the selected subset into a pandas DataFrame.
+
+
+
+\## Methodology 
+
+\### 1. Constructing Genre-Based Subsets (Weak Supervision)
+
+
+
+The IMDB dataset does not include genre labels. To simulate genre subdomains, I use keyword-based rules to assign reviews to genre-like categories.
+
+
+
+Examples:
+
+\- Horror: `gore`, `monster`, `scary`, `slasher`
+
+\- Romance: `love story`, `relationship`, `chemistry`
+
+\- Comedy: `funny`, `hilarious`, `jokes`
+
+\- Action: `fight`, `explosion`, `battle`
+
+
+
+This approach allows analysis without manual annotation. However, it introduces noise because keyword presence does not perfectly represent true genre depiction. This benefits as it reflects real-world scenarios where labeled data is incomplete or imperfect.
+
+
+
+This method also:
+
+* Enables domain-specific analysis
+* Introduces controlled label noise
+* Simulates distant supervision strategies used in applied NLP
+
+
+
+
+
+\### 2. Feature Representation: TF-IDF
+
+
+
+Reviews are transformed into TF-IDF vectors. TF-IDF was selected because:
+
+* It reduces the impact of very frequent words that carry little meaning
+* It emphasizes words that are distinctive within documents
+* It produces sparse, interpretable representations
+* It is a strong and well-understood baseline for text classification
+
+
+
+Vocabulary and inverse document frequency (IDF) values are computed using training data only. This prevents data leakage and ensures a fair evaluation of results.
+
+
+
+\### 3. Model: Multinomial Naive Bayes
+
+
+
+A Multinomial Naive Bayes classifier is used. This model is appropriate because:
+
+* It performs well on sparse, high-dimensional text features
+* It is computationally efficient compared to other models
+* It requires minimal hyperparameter tuning
+* It allows inspection of feature log-probabilities for interpretability
+
+
+
+The goal of this project is not to optimize performance with complex models, but to examine robustness under domain variation using a clear and interpretable baseline.
+
+
+
+\### 4. Experimental Design
+
+
+
+Three evaluation settings are used:
+
+1. General → General
+
+* Train and test on randomly split IMDB data.
+
+
+
+2\. Subset → Subset (In-Domain)
+
+* Train and test within each genre subset.
+
+
+
+3\. General → Subset (Cross-Domain Transfer)
+
+* Train on general IMDB data and test on genre-specific subsets.
+
+
+
+This design isolates the effect of domain shift. If performance decreases in the third setting compared to the first, it suggests that genre-specific language patterns affect model generalization.
+
+## 5. Key Results
+
+* **Baseline Performance:**  
+  The General → General model achieved strong accuracy (~0.88–0.90), establishing a stable benchmark under no domain shift.
+
+* **In-Domain Variation Across Genres:**  
+  Subset → Subset performance varied by genre. Comedy achieved the highest in-domain accuracy (~0.91), while romance was substantially lower (~0.64), suggesting that some genres are inherently harder for sentiment classification.
+
+* **No Performance Degradation Under Cross-Domain Transfer:**  
+  Contrary to expectations, the General → Subset model consistently outperformed the Subset → Subset models across all genres. This indicates that training on a larger and more diverse dataset improved robustness rather than harming it.
+
+* **Directional Error Pattern in Horror Reviews:**  
+  Misclassification analysis showed that positive horror reviews were often predicted as negative. Words like “gore,” “gross,” and “devil” were interpreted negatively by the general model, even when used positively within the horror context. This provides qualitative evidence of how genre-specific language can shift sentiment interpretation.
+
+* **Overall Conclusion:**  
+  In this controlled setting, data diversity and training size outweighed the effects of moderate domain variation. The results suggest that broader training data may enhance robustness rather than degrade performance under mild domain shifts.
+
+
+
+
+\## Limitations
+
+
+
+Several limitations should be considered when interpreting the results.
+
+
+
+* \*\*Weak Genre Labels:\*\* Genre subsets are constructed using keyword rules rather than true metadata. This introduces noise: some reviews may be misclassified, and others may belong to multiple genres. As a result, the subdomains are approximations rather than precise genre categories.
+* \*\*Model Simplicity:\*\* Multinomial Naive Bayes assumes independence between words and relies on a bag-of-words representation. It does not capture context, word order, or negation. Some performance degradation may therefore reflect representational limits rather than domain shift alone.
+* \*\*Restricted Evaluation Scope:\*\* The analysis focuses primarily on accuracy. While appropriate for balanced data, it does not fully describe class-specific errors or model calibration under distribution shift.
+* \*\*Controlled Domain Shift:\*\* All subsets are drawn from the same underlying IMDB corpus. Real-world cross-domain transfer (e.g., across platforms or writing styles) would likely produce stronger distributional differences.
+
+
+
+Overall, the findings illustrate how lexical variation influences sentiment performance, but broader generalization claims require more diverse datasets and modeling approaches.
+
+
+
+\## Future Direction
+
+Several extensions would strengthen this analysis.
+
+
+
+1. Comparing Naive Bayes with a linear model such as Logistic Regression would clarify whether domain sensitivity arises from the classifier or from the TF-IDF representation itself.
+
+
+
+2\. Replacing keyword-based genre assignment with true genre metadata, or allowing multi-label genres, would reduce label noise and sharpen domain boundaries.
+
+
+
+3\. Finally, evaluating transfer across entirely different review types (e.g., movie to book reviews) would test whether the observed effects generalize beyond controlled subdomains within IMDB, especially considering many fans have strong opinions positively for one review type such as books to compared to another review types such as movies.
+
+
+
+\## Key Results
+
+* ??
+* ??
+* ??
+* ??
+
+
+
+\## How to Run:
+
+1\. Install required packages (see below)
+
+2\. Open \*notebook/Portfolio\_Piece\_1.ipynb\*
+
+3\. Run all cells from top to bottom
+
+4\. Visualizations will be saved in the \*outputs/\* directory
+
+(Note: The first run may take several minutes to download dataset)
+
+
+
+\## Requirements:
+
+\- Python 3.9+
+
+\- numpy
+
+\- pandas
+
+\- matplotlib
+
+\- scikit-learn
+
+
+\## Repository Structure:
+
+├── README.md
+
+├── requirements.txt
+
 ├── notebooks/
-│   └── main_analysis.ipynb (or multiple notebooks)
-├── src/ (optional - if you refactor code into modules)
-├── data/ (see note below about data)
-├── outputs/ (figures, saved models, etc.)
-```
 
-**About data**: If your dataset is small (<10 MB), you can include it in the repo. For larger datasets, put instructions in your README for how to download/access it, and add data files to `.gitignore`.
+│   └── portfolio_1.ipynb
+│   └── lab_1.ipynb
 
-## Writing a Good README
+├── src/              # downloaded dataset
 
-Once you've completed your project, update this README to include:
+└── outputs/          # figures, tables, etc.
 
-1. **Project Title** - make it descriptive
-2. **Overview** - 2-3 sentences: what problem are you solving and why?
-3. **Methods** - what approaches did you use? Why these choices?
-4. **Key Results** - what did you find? (keep it brief, details go in the notebook)
-5. **How to Run** - step-by-step instructions so someone can reproduce your work
-6. **Requirements** - what packages/versions are needed?
 
-Your README should make it easy for someone to understand what you did and run your code.
 
-## Peer Review Process
-
-You'll be assigned two classmates' repositories to review. Provide your feedback through **pull requests**:
-
-1. Clone your assigned classmate's repository to your machine
-2. Read through their notebooks, scripts, and documentation
-3. Try running the code yourself
-4. Create a pull request with inline comments on their code/analysis
-5. In the PR description, provide overall feedback addressing:
-   - What worked well conceptually and technically?
-   - What could be clearer in the documentation or analysis?
-   - Specific suggestions for deeper analysis or improvements
-   - Overall strengths of the project
-
-Be constructive and specific. Good peer reviews identify both strengths and areas for growth.
-
-You are *not* grading each other's pieces, just providing feedback.
-
-## Timeline
-
-- **Friday, Feb 20**: Portfolio piece due (push your final version to this repo)
-- **Friday, Feb 27**: Peer reviews due (submit PRs with feedback to your assigned classmates' repos)
-
-## Questions?
-
-We can discuss more in class, in office hours, in discussion, and you can ask on Piazza.
