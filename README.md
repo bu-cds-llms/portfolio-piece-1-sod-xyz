@@ -213,16 +213,6 @@ Several extensions would strengthen this analysis.
 3\. Finally, evaluating transfer across entirely different review types (e.g., movie to book reviews) would test whether the observed effects generalize beyond controlled subdomains within IMDB, especially considering many fans have strong opinions positively for one review type such as books to compared to another review types such as movies.
 
 
-
-\## Key Results
-
-* ??
-* ??
-* ??
-* ??
-
-
-
 \## How to Run:
 
 1\. Install required packages (see below)
